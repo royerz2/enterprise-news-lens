@@ -1,8 +1,9 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { api } from '@/lib/api';
-import { NetworkData } from '@/types/api';
+import { NetworkData, NetworkAnalysisData } from '@/types/api';
 import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 const NODE_COLORS = {
@@ -11,12 +12,17 @@ const NODE_COLORS = {
 };
 
 export default function Network() {
-  const { data: network, isLoading } = useQuery({
+  const { data: network, isLoading: networkLoading } = useQuery({
     queryKey: ['network'],
     queryFn: api.getNetwork,
   });
 
-  if (isLoading) {
+  const { data: analysis, isLoading: analysisLoading } = useQuery({
+    queryKey: ['network-analysis'],
+    queryFn: api.getNetworkAnalysis,
+  });
+
+  if (networkLoading || analysisLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -27,15 +33,17 @@ export default function Network() {
   if (!network) return null;
 
   const typedNetwork = network as NetworkData;
+  const typedAnalysis = analysis as NetworkAnalysisData | undefined;
 
   // Prepare data for visualization
   const networkVisualizationData = typedNetwork.nodes.map((node, index) => ({
-    x: Math.random() * 100, // In a real implementation, you'd use proper layout algorithms
+    x: Math.random() * 100,
     y: Math.random() * 100,
     size: node.degree || 5,
     type: node.type,
     label: node.type === 'article' ? node.title?.substring(0, 30) + '...' : node.name,
     id: node.id,
+    isSme: node.is_sme_related,
   }));
 
   const connectionTypes = [...new Set(typedNetwork.edges.map(edge => edge.connection_type))];
@@ -93,6 +101,62 @@ export default function Network() {
         </Card>
       </div>
 
+      {/* Advanced Network Analysis */}
+      {typedAnalysis && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Advanced Metrics</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="text-sm text-slate-600">Clustering Coefficient:</span>
+                  <span className="font-medium">{typedAnalysis.average_clustering_coefficient.toFixed(3)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-slate-600">Assortativity:</span>
+                  <span className="font-medium">
+                    {typedAnalysis.degree_assortativity_coefficient?.toFixed(3) || 'N/A'}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-slate-600">Communities:</span>
+                  <span className="font-medium">{typedAnalysis.advanced_analysis.communities.length}</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Top PageRank Nodes</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {typedAnalysis.advanced_analysis.pagerank_top_10.slice(0, 5).map(([nodeId, score], index) => {
+                  const node = typedNetwork.nodes.find(n => n.id === nodeId);
+                  return (
+                    <div key={nodeId} className="flex justify-between items-center text-sm">
+                      <div className="flex items-center gap-2">
+                        <span className="text-slate-500">#{index + 1}</span>
+                        <span className="font-medium truncate">
+                          {node?.type === 'article' ? node.title?.substring(0, 25) + '...' : node?.name || nodeId}
+                        </span>
+                        <Badge variant="outline" className="text-xs">
+                          {node?.type}
+                        </Badge>
+                      </div>
+                      <span className="text-blue-600 font-medium">{score.toFixed(3)}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* Network Visualization */}
       <Card>
         <CardHeader>
@@ -127,11 +191,18 @@ export default function Network() {
                     borderRadius: '8px',
                     boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
                   }}
-                  formatter={(value, name, props) => [props.payload.label, props.payload.type]}
+                  formatter={(value, name, props) => [
+                    `${props.payload.label} (${props.payload.type})${props.payload.isSme ? ' - SME' : ''}`,
+                    'Node'
+                  ]}
                 />
                 <Scatter dataKey="size" fill="#8884d8">
                   {networkVisualizationData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={NODE_COLORS[entry.type as keyof typeof NODE_COLORS]} />
+                    <Cell 
+                      key={`cell-${index}`} 
+                      fill={NODE_COLORS[entry.type as keyof typeof NODE_COLORS]} 
+                      fillOpacity={entry.isSme ? 1 : 0.6}
+                    />
                   ))}
                 </Scatter>
               </ScatterChart>
@@ -149,31 +220,75 @@ export default function Network() {
                 <span className="text-sm text-slate-600 capitalize">{type}s</span>
               </div>
             ))}
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-slate-400 opacity-60" />
+              <span className="text-sm text-slate-600">Non-SME</span>
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Connection Types */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Connection Types</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            {connectionTypes.map((type) => {
-              const count = typedNetwork.edges.filter(edge => edge.connection_type === type).length;
-              return (
-                <div key={type} className="bg-slate-50 p-4 rounded-lg">
-                  <div className="text-lg font-semibold text-slate-900">{count}</div>
-                  <div className="text-sm text-slate-600 capitalize">{type.replace('_', ' ')}</div>
+      {/* Connection Types and Centrality Analysis */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Connection Types</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-4">
+              {connectionTypes.map((type) => {
+                const count = typedNetwork.edges.filter(edge => edge.connection_type === type).length;
+                return (
+                  <div key={type} className="bg-slate-50 p-4 rounded-lg">
+                    <div className="text-lg font-semibold text-slate-900">{count}</div>
+                    <div className="text-sm text-slate-600 capitalize">{type.replace('_', ' ')}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+
+        {typedAnalysis && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Centrality Summary</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div>
+                  <h4 className="text-sm font-medium text-slate-700 mb-2">Article Nodes</h4>
+                  <div className="text-xs space-y-1">
+                    <div className="flex justify-between">
+                      <span>Avg Degree Centrality:</span>
+                      <span>{typedAnalysis.centrality_measures_summary.article_nodes.degree_centrality.mean.toFixed(3)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Max Closeness:</span>
+                      <span>{typedAnalysis.centrality_measures_summary.article_nodes.closeness_centrality.max.toFixed(3)}</span>
+                    </div>
+                  </div>
                 </div>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
+                <div>
+                  <h4 className="text-sm font-medium text-slate-700 mb-2">Problem Nodes</h4>
+                  <div className="text-xs space-y-1">
+                    <div className="flex justify-between">
+                      <span>Avg Degree Centrality:</span>
+                      <span>{typedAnalysis.centrality_measures_summary.problem_nodes.degree_centrality.mean.toFixed(3)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Max Closeness:</span>
+                      <span>{typedAnalysis.centrality_measures_summary.problem_nodes.closeness_centrality.max.toFixed(3)}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
 
-      {/* Top Connected Nodes */}
+      {/* Most Connected Nodes */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
@@ -191,7 +306,12 @@ export default function Network() {
                       <h4 className="text-sm font-medium text-slate-900 line-clamp-2">
                         {node.title || 'Untitled Article'}
                       </h4>
-                      <span className="text-xs text-slate-500">{node.domain}</span>
+                      <div className="flex gap-2 mt-1">
+                        <span className="text-xs text-slate-500">{node.domain}</span>
+                        {node.is_sme_related && (
+                          <Badge variant="outline" className="text-xs">SME</Badge>
+                        )}
+                      </div>
                     </div>
                     <span className="text-sm font-semibold text-blue-600 ml-2">
                       {node.degree} connections
@@ -214,7 +334,7 @@ export default function Network() {
                 .map((node) => (
                   <div key={node.id} className="flex justify-between items-center">
                     <span className="text-sm font-medium text-slate-900 capitalize">
-                      {node.name || node.id}
+                      {node.name?.replace('_', ' ') || node.id}
                     </span>
                     <span className="text-sm font-semibold text-red-600">
                       {node.degree} articles

@@ -8,12 +8,13 @@ export const api = {
     return response.json();
   },
 
-  async getArticles(page = 1, perPage = 20, domain?: string) {
+  async getArticles(page = 1, perPage = 20, domain?: string, isSmeRelated?: boolean) {
     const params = new URLSearchParams({
       page: page.toString(),
       per_page: perPage.toString(),
     });
     if (domain) params.append('domain', domain);
+    if (isSmeRelated !== undefined) params.append('is_sme_related', isSmeRelated.toString());
     
     const response = await fetch(`${API_BASE_URL}/articles?${params}`);
     if (!response.ok) throw new Error('Failed to fetch articles');
@@ -26,8 +27,10 @@ export const api = {
     return response.json();
   },
 
-  async searchArticles(query: string) {
+  async searchArticles(query: string, isSmeRelated?: boolean) {
     const params = new URLSearchParams({ q: query });
+    if (isSmeRelated !== undefined) params.append('is_sme_related', isSmeRelated.toString());
+    
     const response = await fetch(`${API_BASE_URL}/search?${params}`);
     if (!response.ok) throw new Error('Failed to search articles');
     return response.json();
@@ -55,6 +58,12 @@ export const api = {
   async getNetwork() {
     const response = await fetch(`${API_BASE_URL}/network`);
     if (!response.ok) throw new Error('Failed to fetch network data');
+    return response.json();
+  },
+
+  async getNetworkAnalysis() {
+    const response = await fetch(`${API_BASE_URL}/network_analysis`);
+    if (!response.ok) throw new Error('Failed to fetch network analysis');
     return response.json();
   },
 };

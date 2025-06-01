@@ -5,9 +5,9 @@ export interface Article {
   title: string;
   content: string;
   domain: string;
-  publish_date: string;
+  publish_date: string | null;
   word_count: number;
-  news_score: number;
+  is_sme_related: boolean;
 }
 
 export interface PaginatedArticles {
@@ -27,15 +27,23 @@ export interface SentimentData {
     negative_articles: number;
     neutral_articles: number;
   };
+  sme_related_sentiment: {
+    mean_compound: number;
+    positive_articles: number;
+    negative_articles: number;
+    neutral_articles: number;
+  };
   articles: Array<{
     article_id: string;
     title: string;
+    domain: string;
     sentiment: {
       compound: number;
       pos: number;
       neu: number;
       neg: number;
     };
+    is_sme_related: boolean;
   }>;
 }
 
@@ -61,16 +69,27 @@ export interface StatsData {
   };
   top_domains: Record<string, number>;
   avg_word_count: number;
-  avg_news_score: number;
+  sme_related_stats: {
+    total_sme_related: number;
+    percentage_sme_related: number;
+  };
 }
 
 export interface ProblemData {
-  problem_summary: Record<string, number>;
+  problem_summary: {
+    all_articles: Record<string, number>;
+    sme_related: Record<string, number>;
+  };
   problem_articles: Record<string, Array<{
     article_id: string;
     title: string;
     url: string;
+    domain: string;
+    publish_date: string | null;
+    is_sme_related: boolean;
   }>>;
+  total_articles_with_problems: number;
+  total_sme_articles_with_problems: number;
 }
 
 export interface NetworkData {
@@ -87,10 +106,34 @@ export interface NetworkData {
     domain?: string;
     name?: string;
     degree?: number;
+    is_sme_related?: boolean;
   }>;
   edges: Array<{
     source: string;
     target: string;
     connection_type: string;
   }>;
+}
+
+export interface NetworkAnalysisData {
+  average_clustering_coefficient: number;
+  degree_assortativity_coefficient: number | null;
+  centrality_measures_summary: {
+    article_nodes: {
+      degree_centrality: { mean: number; max: number };
+      betweenness_centrality: { mean: number; max: number };
+      closeness_centrality: { mean: number; max: number };
+    };
+    problem_nodes: {
+      degree_centrality: { mean: number; max: number };
+      betweenness_centrality: { mean: number; max: number };
+      closeness_centrality: { mean: number; max: number };
+    };
+  };
+  advanced_analysis: {
+    communities: string[][];
+    pagerank_top_10: [string, number][];
+    constraint_top_10_lowest: [string, number][];
+    effective_size_top_10: [string, number][];
+  };
 }

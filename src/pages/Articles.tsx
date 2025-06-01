@@ -14,15 +14,24 @@ export default function Articles() {
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDomain, setSelectedDomain] = useState<string>('');
+  const [smeFilter, setSmeFilter] = useState<string>(''); // '', 'true', 'false'
 
   const { data: articlesData, isLoading } = useQuery({
-    queryKey: ['articles', page, selectedDomain],
-    queryFn: () => api.getArticles(page, 20, selectedDomain || undefined),
+    queryKey: ['articles', page, selectedDomain, smeFilter],
+    queryFn: () => api.getArticles(
+      page, 
+      20, 
+      selectedDomain || undefined,
+      smeFilter ? smeFilter === 'true' : undefined
+    ),
   });
 
   const { data: searchResults } = useQuery({
-    queryKey: ['search', searchQuery],
-    queryFn: () => api.searchArticles(searchQuery),
+    queryKey: ['search', searchQuery, smeFilter],
+    queryFn: () => api.searchArticles(
+      searchQuery,
+      smeFilter ? smeFilter === 'true' : undefined
+    ),
     enabled: searchQuery.length > 2,
   });
 
@@ -33,17 +42,10 @@ export default function Articles() {
 
   const displayedArticles = searchQuery.length > 2 ? searchResults?.articles : articlesData?.articles;
 
-  const getSentimentColor = (score: number) => {
-    if (score > 0.1) return 'bg-green-100 text-green-800';
-    if (score < -0.1) return 'bg-red-100 text-red-800';
-    return 'bg-slate-100 text-slate-800';
-  };
-
-  const formatDate = (dateStr: string) => {
+  const formatDate = (dateStr: string | null) => {
+    if (!dateStr) return 'No date';
     try {
-      const [date, time] = dateStr.split(' - ');
-      const [day, month, year] = date.split('/');
-      return new Date(`${year}-${month}-${day}T${time}`).toLocaleDateString();
+      return new Date(dateStr).toLocaleDateString();
     } catch {
       return dateStr;
     }
@@ -92,6 +94,15 @@ export default function Articles() {
                 <option key={domain} value={domain}>{domain}</option>
               ))}
             </select>
+            <select
+              value={smeFilter}
+              onChange={(e) => setSmeFilter(e.target.value)}
+              className="px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">All Articles</option>
+              <option value="true">SME Related Only</option>
+              <option value="false">Non-SME Only</option>
+            </select>
           </div>
         </CardContent>
       </Card>
@@ -126,11 +137,9 @@ export default function Articles() {
                 
                 <div className="flex flex-wrap gap-2">
                   <Badge variant="outline">{article.domain}</Badge>
-                  {article.news_score !== undefined && article.news_score !== null && (
-                    <Badge 
-                      className={getSentimentColor(article.news_score)}
-                    >
-                      Score: {article.news_score.toFixed(2)}
+                  {article.is_sme_related && (
+                    <Badge className="bg-blue-100 text-blue-800">
+                      SME Related
                     </Badge>
                   )}
                 </div>
