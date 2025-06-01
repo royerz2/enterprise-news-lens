@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { ArticleLink } from '@/components/ui/article-link';
 import { api } from '@/lib/api';
 import { Search, ExternalLink } from 'lucide-react';
 import { Article } from '@/types/api';
@@ -101,9 +102,12 @@ export default function Articles() {
           <Card key={article._id} className="hover:shadow-lg transition-shadow duration-300">
             <CardHeader>
               <div className="flex justify-between items-start gap-2">
-                <CardTitle className="text-sm font-medium line-clamp-2">
+                <ArticleLink 
+                  articleId={article._id}
+                  className="font-medium text-slate-900 line-clamp-2 block flex-1"
+                >
                   {article.title}
-                </CardTitle>
+                </ArticleLink>
                 <a
                   href={article.url}
                   target="_blank"
@@ -122,11 +126,13 @@ export default function Articles() {
                 
                 <div className="flex flex-wrap gap-2">
                   <Badge variant="outline">{article.domain}</Badge>
-                  <Badge 
-                    className={getSentimentColor(article.news_score)}
-                  >
-                    Score: {article.news_score.toFixed(2)}
-                  </Badge>
+                  {article.news_score !== undefined && article.news_score !== null && (
+                    <Badge 
+                      className={getSentimentColor(article.news_score)}
+                    >
+                      Score: {article.news_score.toFixed(2)}
+                    </Badge>
+                  )}
                 </div>
 
                 <div className="flex justify-between text-xs text-slate-500">
