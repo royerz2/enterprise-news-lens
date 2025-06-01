@@ -9,6 +9,8 @@ import Overview from "./pages/Overview";
 import Articles from "./pages/Articles";
 import Sentiment from "./pages/Sentiment";
 import Problems from "./pages/Problems";
+import Clusters from "./pages/Clusters";
+import Network from "./pages/Network";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -27,6 +29,8 @@ const App = () => (
               <Route path="/articles" element={<Articles />} />
               <Route path="/sentiment" element={<Sentiment />} />
               <Route path="/problems" element={<Problems />} />
+              <Route path="/clusters" element={<Clusters />} />
+              <Route path="/network" element={<Network />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
