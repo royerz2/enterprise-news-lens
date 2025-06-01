@@ -1,6 +1,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ArticleLink } from '@/components/ui/article-link';
 import { api } from '@/lib/api';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { ProblemData } from '@/types/api';
@@ -99,23 +100,22 @@ export default function Problems() {
       {/* Problem Articles */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {Object.entries(typedProblems.problem_articles).map(([problem, articles]) => {
-          const typedArticles = articles as Array<{
-            article_id: string;
-            title: string;
-            url: string;
-          }>;
+          // Ensure articles is an array
+          const articlesList = Array.isArray(articles) ? articles : [];
           
           return (
             <Card key={problem}>
               <CardHeader>
-                <CardTitle className="capitalize">{problem} ({typedArticles.length})</CardTitle>
+                <CardTitle className="capitalize">{problem} ({articlesList.length})</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3 max-h-64 overflow-y-auto">
-                  {typedArticles.slice(0, 5).map((article) => (
+                  {articlesList.slice(0, 5).map((article) => (
                     <div key={article.article_id} className="border-l-4 border-blue-500 pl-3">
                       <h4 className="text-sm font-medium text-slate-900 line-clamp-2">
-                        {article.title}
+                        <ArticleLink articleId={article.article_id}>
+                          {article.title}
+                        </ArticleLink>
                       </h4>
                       <a 
                         href={article.url} 
@@ -127,9 +127,9 @@ export default function Problems() {
                       </a>
                     </div>
                   ))}
-                  {typedArticles.length > 5 && (
+                  {articlesList.length > 5 && (
                     <div className="text-xs text-slate-500 text-center">
-                      ... and {typedArticles.length - 5} more articles
+                      ... and {articlesList.length - 5} more articles
                     </div>
                   )}
                 </div>
