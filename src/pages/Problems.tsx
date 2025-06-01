@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { api } from '@/lib/api';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { ProblemData } from '@/types/api';
 
 const PROBLEM_COLORS = {
   financing: '#3b82f6',
@@ -31,7 +32,9 @@ export default function Problems() {
 
   if (!problems) return null;
 
-  const chartData = Object.entries(problems.problem_summary).map(([problem, count]) => ({
+  const typedProblems = problems as ProblemData;
+
+  const chartData = Object.entries(typedProblems.problem_summary).map(([problem, count]) => ({
     problem: problem.charAt(0).toUpperCase() + problem.slice(1),
     count,
     color: PROBLEM_COLORS[problem as keyof typeof PROBLEM_COLORS] || '#64748b',
@@ -48,7 +51,7 @@ export default function Problems() {
 
       {/* Problem Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {Object.entries(problems.problem_summary).map(([problem, count]) => (
+        {Object.entries(typedProblems.problem_summary).map(([problem, count]) => (
           <Card key={problem} className="hover:shadow-lg transition-shadow">
             <CardContent className="p-4">
               <div className="text-center">
@@ -95,37 +98,45 @@ export default function Problems() {
 
       {/* Problem Articles */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {Object.entries(problems.problem_articles).map(([problem, articles]) => (
-          <Card key={problem}>
-            <CardHeader>
-              <CardTitle className="capitalize">{problem} ({articles.length})</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3 max-h-64 overflow-y-auto">
-                {articles.slice(0, 5).map((article) => (
-                  <div key={article.article_id} className="border-l-4 border-blue-500 pl-3">
-                    <h4 className="text-sm font-medium text-slate-900 line-clamp-2">
-                      {article.title}
-                    </h4>
-                    <a 
-                      href={article.url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-xs text-blue-600 hover:text-blue-800"
-                    >
-                      Read article →
-                    </a>
-                  </div>
-                ))}
-                {articles.length > 5 && (
-                  <div className="text-xs text-slate-500 text-center">
-                    ... and {articles.length - 5} more articles
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+        {Object.entries(typedProblems.problem_articles).map(([problem, articles]) => {
+          const typedArticles = articles as Array<{
+            article_id: string;
+            title: string;
+            url: string;
+          }>;
+          
+          return (
+            <Card key={problem}>
+              <CardHeader>
+                <CardTitle className="capitalize">{problem} ({typedArticles.length})</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3 max-h-64 overflow-y-auto">
+                  {typedArticles.slice(0, 5).map((article) => (
+                    <div key={article.article_id} className="border-l-4 border-blue-500 pl-3">
+                      <h4 className="text-sm font-medium text-slate-900 line-clamp-2">
+                        {article.title}
+                      </h4>
+                      <a 
+                        href={article.url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-xs text-blue-600 hover:text-blue-800"
+                      >
+                        Read article →
+                      </a>
+                    </div>
+                  ))}
+                  {typedArticles.length > 5 && (
+                    <div className="text-xs text-slate-500 text-center">
+                      ... and {typedArticles.length - 5} more articles
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
     </div>
   );
