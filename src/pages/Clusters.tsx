@@ -3,9 +3,10 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { ArticleLink } from '@/components/ui/article-link';
 import { api } from '@/lib/api';
 import { ClusterData } from '@/types/api';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ScatterChart, Scatter } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export default function Clusters() {
   const [nClusters, setNClusters] = useState(8);
@@ -158,16 +159,19 @@ export default function Clusters() {
                   <div className="space-y-2 max-h-48 overflow-y-auto">
                     {cluster.articles.slice(0, 3).map((article) => (
                       <div key={article.article_id} className="border-l-4 border-blue-500 pl-3">
-                        <h5 className="text-sm font-medium text-slate-900 line-clamp-2">
+                        <ArticleLink 
+                          articleId={article.article_id}
+                          className="text-sm font-medium text-slate-900 line-clamp-2 block"
+                        >
                           {article.title}
-                        </h5>
+                        </ArticleLink>
                         <a 
                           href={article.url} 
                           target="_blank" 
                           rel="noopener noreferrer"
-                          className="text-xs text-blue-600 hover:text-blue-800"
+                          className="text-xs text-slate-500 hover:text-slate-700"
                         >
-                          Read article →
+                          View original →
                         </a>
                       </div>
                     ))}

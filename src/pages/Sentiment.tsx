@@ -2,6 +2,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { SentimentChart } from '@/components/charts/SentimentChart';
+import { ArticleLink } from '@/components/ui/article-link';
 import { api } from '@/lib/api';
 import { Heart, TrendingUp, TrendingDown } from 'lucide-react';
 import { StatsCard } from '@/components/dashboard/StatsCard';
@@ -95,9 +96,12 @@ export default function Sentiment() {
               >
                 <div className="flex justify-between items-start gap-4">
                   <div className="flex-1">
-                    <h3 className="font-medium text-slate-900 line-clamp-2">
+                    <ArticleLink 
+                      articleId={article.article_id}
+                      className="font-medium text-slate-900 line-clamp-2 block"
+                    >
                       {article.title}
-                    </h3>
+                    </ArticleLink>
                     <div className="mt-2 flex gap-2 text-xs">
                       <span className="text-slate-500">
                         Compound: {article.sentiment.compound.toFixed(3)}
