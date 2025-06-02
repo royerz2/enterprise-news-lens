@@ -16,11 +16,13 @@ export default function ArticleDetail() {
     enabled: !!id,
   });
 
-  const { data: analysis, isLoading: analysisLoading } = useQuery({
+  const { data: analysisResponse, isLoading: analysisLoading } = useQuery({
     queryKey: ['analysis', id],
     queryFn: () => api.getAnalysis(id!),
     enabled: !!id,
   });
+
+  const analysis = analysisResponse?.analysis;
 
   if (isLoading) {
     return (
@@ -55,27 +57,6 @@ export default function ArticleDetail() {
     if (score > 0.1) return 'Positive';
     if (score < -0.1) return 'Negative';
     return 'Neutral';
-  };
-
-  const getUrgencyColor = (urgency: string) => {
-    switch (urgency?.toLowerCase()) {
-      case 'high': return 'bg-red-100 text-red-800';
-      case 'medium': return 'bg-yellow-100 text-yellow-800';
-      case 'low': return 'bg-green-100 text-green-800';
-      default: return 'bg-slate-100 text-slate-800';
-    }
-  };
-
-  // Helper function to safely check if an object has the expected sentiment structure
-  const isSentimentObject = (obj: unknown): obj is { score: number; label: string; confidence: number } => {
-    return typeof obj === 'object' && 
-           obj !== null && 
-           'score' in obj && 
-           'label' in obj && 
-           'confidence' in obj &&
-           typeof (obj as any).score === 'number' &&
-           typeof (obj as any).label === 'string' &&
-           typeof (obj as any).confidence === 'number';
   };
 
   return (
@@ -137,92 +118,34 @@ export default function ArticleDetail() {
           {analysis && !analysisLoading && (
             <>
               {/* Analysis Summary */}
-              <div>
-                <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                  <Brain className="h-5 w-5" />
-                  AI Analysis Summary
-                </h3>
-                <div className="bg-slate-50 p-4 rounded-lg">
-                  <p className="text-slate-700">{analysis.summary}</p>
+              {analysis.implications && (
+                <div>
+                  <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                    <Brain className="h-5 w-5" />
+                    AI Analysis Summary
+                  </h3>
+                  <div className="bg-slate-50 p-4 rounded-lg">
+                    <p className="text-slate-700">{analysis.implications}</p>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Overall Sentiment */}
               <div>
                 <h3 className="text-lg font-semibold mb-3">Overall Sentiment</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="text-center">
-                    <Badge className={getSentimentColor(analysis.overall_sentiment.score)}>
-                      {analysis.overall_sentiment.label}
+                    <Badge className={getSentimentColor(analysis.overall_score)}>
+                      {getSentimentLabel(analysis.overall_score)}
                     </Badge>
                     <div className="text-sm text-slate-600 mt-1">
-                      Score: {analysis.overall_sentiment.score.toFixed(3)}
-                    </div>
-                    <div className="text-xs text-slate-500">
-                      Confidence: {(analysis.overall_sentiment.confidence * 100).toFixed(1)}%
+                      Score: {analysis.overall_score.toFixed(3)}
                     </div>
                   </div>
                   <div className="text-center">
                     <div className="text-sm text-slate-600">Emotional Tone</div>
                     <div className="font-medium text-purple-600">
-                      {analysis.emotional_tone.primary_emotion}
-                    </div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-sm text-slate-600">SME Relevance</div>
-                    <div className="font-medium text-blue-600">
-                      {(analysis.sme_implications.relevance_score * 100).toFixed(0)}%
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Key Topics */}
-              <div>
-                <h3 className="text-lg font-semibold mb-3">Key Topics</h3>
-                <div className="flex flex-wrap gap-2">
-                  {analysis.key_topics.map((topic, index) => (
-                    <Badge key={index} variant="outline">
-                      {topic}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-
-              {/* SME Implications */}
-              <div>
-                <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5" />
-                  SME Implications
-                </h3>
-                <div className="space-y-4">
-                  <div className="flex items-center gap-4">
-                    <div>
-                      <span className="text-sm text-slate-600">Urgency Level:</span>
-                      <Badge className={getUrgencyColor(analysis.sme_implications.urgency_level)} variant="secondary">
-                        <AlertTriangle className="h-3 w-3 mr-1" />
-                        {analysis.sme_implications.urgency_level}
-                      </Badge>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <h4 className="font-medium mb-2">Key Implications:</h4>
-                    <ul className="list-disc list-inside space-y-1 text-slate-700">
-                      {analysis.sme_implications.key_implications.map((implication, index) => (
-                        <li key={index}>{implication}</li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <div>
-                    <h4 className="font-medium mb-2">Affected Areas:</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {analysis.sme_implications.affected_areas.map((area, index) => (
-                        <Badge key={index} variant="secondary">
-                          {area}
-                        </Badge>
-                      ))}
+                      {analysis.emotional_tone}
                     </div>
                   </div>
                 </div>
@@ -233,24 +156,14 @@ export default function ArticleDetail() {
                 <div>
                   <h3 className="text-lg font-semibold mb-3">Entity Sentiment</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {Object.entries(analysis.entity_sentiment).map(([entity, sentiment]) => {
-                      // Only render if the sentiment object has the expected structure
-                      if (!isSentimentObject(sentiment)) {
-                        return null;
-                      }
-                      
-                      return (
-                        <div key={entity} className="p-3 border rounded-lg">
-                          <div className="font-medium text-sm">{entity}</div>
-                          <Badge className={getSentimentColor(sentiment.score)} variant="secondary">
-                            {sentiment.label}
-                          </Badge>
-                          <div className="text-xs text-slate-500 mt-1">
-                            {(sentiment.confidence * 100).toFixed(0)}% confidence
-                          </div>
+                    {Object.entries(analysis.entity_sentiment).map(([entity, sentiment]) => (
+                      <div key={entity} className="p-3 border rounded-lg">
+                        <div className="font-medium text-sm">{entity}</div>
+                        <div className="text-xs text-slate-600 mt-1">
+                          {sentiment}
                         </div>
-                      );
-                    })}
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}

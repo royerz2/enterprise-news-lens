@@ -1,3 +1,4 @@
+
 export interface Article {
   _id: string;
   url: string;
@@ -137,29 +138,14 @@ export interface NetworkAnalysisData {
   };
 }
 
+// Updated to match actual API response structure
 export interface AnalysisData {
   article_id: string;
-  overall_sentiment: {
-    score: number;
-    label: string;
-    confidence: number;
+  analysis: {
+    overall_score: number;
+    emotional_tone: string;
+    entity_sentiment: Record<string, string>;
+    implications: string;
   };
-  entity_sentiment: Record<string, {
-    score: number;
-    label: string;
-    confidence: number;
-  }>;
-  emotional_tone: {
-    primary_emotion: string;
-    emotion_scores: Record<string, number>;
-  };
-  sme_implications: {
-    relevance_score: number;
-    key_implications: string[];
-    affected_areas: string[];
-    urgency_level: string;
-  };
-  summary: string;
-  key_topics: string[];
-  analysis_timestamp: string;
+  analyzed_at: string;
 }
