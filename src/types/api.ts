@@ -1,4 +1,3 @@
-
 export interface Article {
   _id: string;
   url: string;
@@ -136,4 +135,31 @@ export interface NetworkAnalysisData {
     constraint_top_10_lowest: [string, number][];
     effective_size_top_10: [string, number][];
   };
+}
+
+export interface AnalysisData {
+  article_id: string;
+  overall_sentiment: {
+    score: number;
+    label: string;
+    confidence: number;
+  };
+  entity_sentiment: Record<string, {
+    score: number;
+    label: string;
+    confidence: number;
+  }>;
+  emotional_tone: {
+    primary_emotion: string;
+    emotion_scores: Record<string, number>;
+  };
+  sme_implications: {
+    relevance_score: number;
+    key_implications: string[];
+    affected_areas: string[];
+    urgency_level: string;
+  };
+  summary: string;
+  key_topics: string[];
+  analysis_timestamp: string;
 }

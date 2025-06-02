@@ -1,4 +1,3 @@
-
 const API_BASE_URL = 'http://localhost:5001';
 
 export const api = {
@@ -64,6 +63,12 @@ export const api = {
   async getNetworkAnalysis() {
     const response = await fetch(`${API_BASE_URL}/network_analysis`);
     if (!response.ok) throw new Error('Failed to fetch network analysis');
+    return response.json();
+  },
+
+  async getAnalysis(articleId: string) {
+    const response = await fetch(`${API_BASE_URL}/analysis/${articleId}`);
+    if (!response.ok) throw new Error('Failed to fetch analysis');
     return response.json();
   },
 };

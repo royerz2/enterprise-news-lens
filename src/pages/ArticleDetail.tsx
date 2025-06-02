@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, ExternalLink, Calendar, Globe, FileText } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Calendar, Globe, FileText, Brain, TrendingUp, AlertTriangle } from 'lucide-react';
 import { api } from '@/lib/api';
 
 export default function ArticleDetail() {
@@ -13,6 +13,12 @@ export default function ArticleDetail() {
   const { data: article, isLoading, error } = useQuery({
     queryKey: ['article', id],
     queryFn: () => api.getArticle(id!),
+    enabled: !!id,
+  });
+
+  const { data: analysis, isLoading: analysisLoading } = useQuery({
+    queryKey: ['analysis', id],
+    queryFn: () => api.getAnalysis(id!),
     enabled: !!id,
   });
 
@@ -39,16 +45,25 @@ export default function ArticleDetail() {
     );
   }
 
-  const getSentimentColor = (compound: number) => {
-    if (compound > 0.1) return 'bg-green-100 text-green-800';
-    if (compound < -0.1) return 'bg-red-100 text-red-800';
+  const getSentimentColor = (score: number) => {
+    if (score > 0.1) return 'bg-green-100 text-green-800';
+    if (score < -0.1) return 'bg-red-100 text-red-800';
     return 'bg-slate-100 text-slate-800';
   };
 
-  const getSentimentLabel = (compound: number) => {
-    if (compound > 0.1) return 'Positive';
-    if (compound < -0.1) return 'Negative';
+  const getSentimentLabel = (score: number) => {
+    if (score > 0.1) return 'Positive';
+    if (score < -0.1) return 'Negative';
     return 'Neutral';
+  };
+
+  const getUrgencyColor = (urgency: string) => {
+    switch (urgency?.toLowerCase()) {
+      case 'high': return 'bg-red-100 text-red-800';
+      case 'medium': return 'bg-yellow-100 text-yellow-800';
+      case 'low': return 'bg-green-100 text-green-800';
+      default: return 'bg-slate-100 text-slate-800';
+    }
   };
 
   return (
@@ -89,6 +104,11 @@ export default function ArticleDetail() {
               <FileText className="h-4 w-4" />
               {article.word_count} words
             </div>
+            {article.is_sme_related && (
+              <Badge className="bg-blue-100 text-blue-800">
+                SME Related
+              </Badge>
+            )}
           </div>
         </CardHeader>
         
@@ -101,10 +121,134 @@ export default function ArticleDetail() {
             </div>
           </div>
 
-          {/* Sentiment Analysis */}
-          {article.sentiment && (
+          {/* Advanced Analysis */}
+          {analysis && !analysisLoading && (
+            <>
+              {/* Analysis Summary */}
+              <div>
+                <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                  <Brain className="h-5 w-5" />
+                  AI Analysis Summary
+                </h3>
+                <div className="bg-slate-50 p-4 rounded-lg">
+                  <p className="text-slate-700">{analysis.summary}</p>
+                </div>
+              </div>
+
+              {/* Overall Sentiment */}
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Overall Sentiment</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="text-center">
+                    <Badge className={getSentimentColor(analysis.overall_sentiment.score)}>
+                      {analysis.overall_sentiment.label}
+                    </Badge>
+                    <div className="text-sm text-slate-600 mt-1">
+                      Score: {analysis.overall_sentiment.score.toFixed(3)}
+                    </div>
+                    <div className="text-xs text-slate-500">
+                      Confidence: {(analysis.overall_sentiment.confidence * 100).toFixed(1)}%
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-sm text-slate-600">Emotional Tone</div>
+                    <div className="font-medium text-purple-600">
+                      {analysis.emotional_tone.primary_emotion}
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-sm text-slate-600">SME Relevance</div>
+                    <div className="font-medium text-blue-600">
+                      {(analysis.sme_implications.relevance_score * 100).toFixed(0)}%
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Key Topics */}
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Key Topics</h3>
+                <div className="flex flex-wrap gap-2">
+                  {analysis.key_topics.map((topic, index) => (
+                    <Badge key={index} variant="outline">
+                      {topic}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+
+              {/* SME Implications */}
+              <div>
+                <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5" />
+                  SME Implications
+                </h3>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4">
+                    <div>
+                      <span className="text-sm text-slate-600">Urgency Level:</span>
+                      <Badge className={getUrgencyColor(analysis.sme_implications.urgency_level)} variant="secondary">
+                        <AlertTriangle className="h-3 w-3 mr-1" />
+                        {analysis.sme_implications.urgency_level}
+                      </Badge>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h4 className="font-medium mb-2">Key Implications:</h4>
+                    <ul className="list-disc list-inside space-y-1 text-slate-700">
+                      {analysis.sme_implications.key_implications.map((implication, index) => (
+                        <li key={index}>{implication}</li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div>
+                    <h4 className="font-medium mb-2">Affected Areas:</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {analysis.sme_implications.affected_areas.map((area, index) => (
+                        <Badge key={index} variant="secondary">
+                          {area}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Entity Sentiment */}
+              {Object.keys(analysis.entity_sentiment).length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold mb-3">Entity Sentiment</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {Object.entries(analysis.entity_sentiment).map(([entity, sentiment]) => (
+                      <div key={entity} className="p-3 border rounded-lg">
+                        <div className="font-medium text-sm">{entity}</div>
+                        <Badge className={getSentimentColor(sentiment.score)} variant="secondary">
+                          {sentiment.label}
+                        </Badge>
+                        <div className="text-xs text-slate-500 mt-1">
+                          {(sentiment.confidence * 100).toFixed(0)}% confidence
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+
+          {analysisLoading && (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <span className="ml-2 text-slate-600">Loading advanced analysis...</span>
+            </div>
+          )}
+
+          {/* Legacy Sentiment Analysis (fallback if advanced analysis not available) */}
+          {!analysis && !analysisLoading && article.sentiment && (
             <div>
-              <h3 className="text-lg font-semibold mb-3">Sentiment Analysis</h3>
+              <h3 className="text-lg font-semibold mb-3">Basic Sentiment Analysis</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="text-center">
                   <Badge className={getSentimentColor(article.sentiment.compound)}>
@@ -149,17 +293,6 @@ export default function ArticleDetail() {
               </div>
             </div>
           )}
-
-          {/* News Score */}
-          <div>
-            <h3 className="text-lg font-semibold mb-3">News Score</h3>
-            <div className="text-2xl font-bold text-blue-600">
-              {article.news_score?.toFixed(2) || 'N/A'}
-            </div>
-            <div className="text-sm text-slate-600">
-              Relevance score for SME news analysis
-            </div>
-          </div>
         </CardContent>
       </Card>
     </div>
