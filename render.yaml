@@ -6,6 +6,6 @@ services:
     startCommand: npm start
     envVars:
       - key: NODE_VERSION
-        value: 18.0.0
+        value: 18.17.0
       - key: PORT
         value: 8080 
