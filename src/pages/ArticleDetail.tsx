@@ -66,6 +66,18 @@ export default function ArticleDetail() {
     }
   };
 
+  // Helper function to safely check if an object has the expected sentiment structure
+  const isSentimentObject = (obj: unknown): obj is { score: number; label: string; confidence: number } => {
+    return typeof obj === 'object' && 
+           obj !== null && 
+           'score' in obj && 
+           'label' in obj && 
+           'confidence' in obj &&
+           typeof (obj as any).score === 'number' &&
+           typeof (obj as any).label === 'string' &&
+           typeof (obj as any).confidence === 'number';
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -221,17 +233,24 @@ export default function ArticleDetail() {
                 <div>
                   <h3 className="text-lg font-semibold mb-3">Entity Sentiment</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {Object.entries(analysis.entity_sentiment).map(([entity, sentiment]) => (
-                      <div key={entity} className="p-3 border rounded-lg">
-                        <div className="font-medium text-sm">{entity}</div>
-                        <Badge className={getSentimentColor(sentiment.score)} variant="secondary">
-                          {sentiment.label}
-                        </Badge>
-                        <div className="text-xs text-slate-500 mt-1">
-                          {(sentiment.confidence * 100).toFixed(0)}% confidence
+                    {Object.entries(analysis.entity_sentiment).map(([entity, sentiment]) => {
+                      // Only render if the sentiment object has the expected structure
+                      if (!isSentimentObject(sentiment)) {
+                        return null;
+                      }
+                      
+                      return (
+                        <div key={entity} className="p-3 border rounded-lg">
+                          <div className="font-medium text-sm">{entity}</div>
+                          <Badge className={getSentimentColor(sentiment.score)} variant="secondary">
+                            {sentiment.label}
+                          </Badge>
+                          <div className="text-xs text-slate-500 mt-1">
+                            {(sentiment.confidence * 100).toFixed(0)}% confidence
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
