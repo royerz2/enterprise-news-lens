@@ -152,7 +152,7 @@ export default function ArticleDetail() {
               </div>
 
               {/* Entity Sentiment */}
-              {Object.keys(analysis.entity_sentiment).length > 0 && (
+              {analysis.entity_sentiment && Object.keys(analysis.entity_sentiment).length > 0 && (
                 <div>
                   <h3 className="text-lg font-semibold mb-3">Entity Sentiment</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -160,7 +160,7 @@ export default function ArticleDetail() {
                       <div key={entity} className="p-3 border rounded-lg">
                         <div className="font-medium text-sm">{entity}</div>
                         <div className="text-xs text-slate-600 mt-1">
-                          {sentiment}
+                          {String(sentiment)}
                         </div>
                       </div>
                     ))}
