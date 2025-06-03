@@ -1,11 +1,8 @@
-
 import { Link, useLocation } from 'react-router-dom';
 import { 
   BarChart, 
   FileText, 
   Heart, 
-  Grid3x3, 
-  PieChart, 
   TrendingUp 
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -15,8 +12,6 @@ const navigation = [
   { name: 'Articles', href: '/articles', icon: FileText },
   { name: 'Sentiment', href: '/sentiment', icon: Heart },
   { name: 'Problems', href: '/problems', icon: TrendingUp },
-  { name: 'Clusters', href: '/clusters', icon: Grid3x3 },
-  { name: 'Network', href: '/network', icon: PieChart },
 ];
 
 export function Navbar() {
